@@ -1,0 +1,10 @@
+﻿{
+    "BotToken": "",
+    "BackpackApiKey": "",
+    "SteamApiKey": "",
+    "SuccessColor": "00FF00",
+    "ErrorColor": "FF0000",
+    "OwnerIds": [
+        0
+    ]
+}
