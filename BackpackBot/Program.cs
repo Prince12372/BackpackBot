@@ -1,6 +1,7 @@
 ﻿namespace BackpackBot
 {
     using System;
+    using System.IO;
     using System.Threading.Tasks;
     using BackpackBot.Services;
     using BackpackBot.Services.Database;
@@ -16,8 +17,10 @@
         static async Task MainAsync()
         {
             Logging.SetupLogger();
-
-            DbSchedulerService scheduler = new DbSchedulerService();
+            BotConfig config = new BotConfig();
+            DbService dbService = new DbService(Path.Combine(Directory.GetCurrentDirectory(), "Data/BackpackBot.db"));
+            BackpackWrapper wrapper = new BackpackWrapper(config.BackpackApiKey);
+            DbSchedulerService scheduler = new DbSchedulerService(dbService, wrapper);
 
             scheduler.Start();
 

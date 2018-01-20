@@ -1,6 +1,7 @@
 ﻿namespace BackpackBot.Services.Scheduler
 {
     using BackpackBot.Services.Database;
+    using BackpackWebAPI;
     using FluentScheduler;
     using NLog;
 
@@ -9,10 +10,15 @@
         private static BotConfig config = new BotConfig();
         private static Logger log = LogManager.GetCurrentClassLogger();
 
-        public DbSchedulerService()
+        public DbSchedulerService(DbService db, BackpackWrapper wrapper)
         {
-            DbService db = new DbService();
-            db.Setup();
+            DbPricesUpdater pricesUpdater = new DbPricesUpdater();
+            DbCurrenciesUpdater currenciesUpdater = new DbCurrenciesUpdater();
+            DbSpecialItemsUpdater specialItemsUpdater = new DbSpecialItemsUpdater();
+            pricesUpdater.Setup(db, wrapper);
+            currenciesUpdater.Setup(db, wrapper);
+            specialItemsUpdater.Setup(db, wrapper);
+
             Schedule<DbCurrenciesUpdater>().ToRunNow().AndEvery(1).Hours();
             Schedule<DbPricesUpdater>().ToRunNow().AndEvery(1).Hours();
             Schedule<DbSpecialItemsUpdater>().ToRunNow();

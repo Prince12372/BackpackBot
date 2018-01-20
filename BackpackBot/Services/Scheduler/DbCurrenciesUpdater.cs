@@ -2,23 +2,30 @@
 {
     using System;
     using System.Collections.Generic;
+    using System.Diagnostics;
     using BackpackBot.Services.Database;
     using BackpackBot.Services.Database.Models;
     using BackpackWebAPI;
     using BackpackWebAPI.Models;
     using FluentScheduler;
     using NLog;
+    using SQLite;
 
     public class DbCurrenciesUpdater : IJob
     {
         private static BotConfig config = new BotConfig();
         private static Logger log = LogManager.GetCurrentClassLogger();
-        private static DbService db = new DbService();
-        private static BackpackWrapper wrapper = new BackpackWrapper(config.BackpackApiKey);
+        private DbService dbService;
+        private BackpackWrapper wrapper;
+
+        public DbCurrenciesUpdater()
+        {
+        }
 
         public void Execute()
         {
             log.Info("Update started.");
+            Stopwatch watch = Stopwatch.StartNew();
             CurrenciesRoot root = wrapper.GetCurrenciesAsync().Result;
             List<DbCurrency> items = new List<DbCurrency>();
 
@@ -39,15 +46,39 @@
                     });
             }
 
-            try
+            int inserted = 0, updated = 0;
+
+            using (var db = new SQLiteConnection(dbService.Path))
             {
-                db.UpdateCurrencies(items);
-                log.Info("Update complete.");
+                // First, insert new
+                try
+                {
+                    inserted = db.InsertAll(items, extra: "IF NOT EXISTS");
+                }
+                catch (Exception ex)
+                {
+                    log.Warn(ex, ex.Message, null);
+                }
+
+                // Second, update
+                try
+                {
+                    updated = db.UpdateAll(items);
+                }
+                catch (Exception ex)
+                {
+                    log.Warn(ex, ex.Message, null);
+                }
             }
-            catch (Exception ex)
-            {
-                log.Warn(ex, ex.Message, null);
-            }
+
+            watch.Stop();
+            log.Info($"Update complete - Inserted {inserted} items and updated {updated} items - took {watch.ElapsedMilliseconds}ms");
+        }
+
+        public void Setup(DbService dbService, BackpackWrapper wrapper)
+        {
+            this.dbService = dbService;
+            this.wrapper = wrapper;
         }
     }
 }

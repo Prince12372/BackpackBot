@@ -11,16 +11,17 @@
     public class DbService
     {
         private readonly Logger log = LogManager.GetCurrentClassLogger();
-        private string path;
 
         public DbService(string path)
         {
-            this.path = path;
+            Path = path;
         }
 
+        public string Path { get; private set; }
+        
         public async Task Setup()
         {
-            SQLiteAsyncConnection db = new SQLiteAsyncConnection(path);
+            SQLiteAsyncConnection db = new SQLiteAsyncConnection(Path);
             await db.CreateTablesAsync(types: new Type[] { typeof(DbCurrency), typeof(DbPriceItem), typeof(DbSpecialItem) }).ConfigureAwait(false);
         }
     }

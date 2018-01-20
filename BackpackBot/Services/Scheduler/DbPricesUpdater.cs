@@ -2,12 +2,14 @@
 {
     using System;
     using System.Collections.Generic;
+    using System.Diagnostics;
     using BackpackBot.Services.Database;
     using BackpackBot.Services.Database.Models;
     using BackpackWebAPI;
     using BackpackWebAPI.Models;
     using FluentScheduler;
     using NLog;
+    using SQLite;
 
     public class DbPricesUpdater : IJob
     {
@@ -139,12 +141,17 @@
             { "14", "Collector's" },
             { "15", "Decorated Weapon" }
         };
-        private static DbService db = new DbService();
-        private static BackpackWrapper wrapper = new BackpackWrapper(config.BackpackApiKey);
+        private DbService dbService;
+        private BackpackWrapper wrapper;
 
-        public async void Execute()
+        public DbPricesUpdater()
+        {
+        }
+
+        public void Execute()
         {
             log.Info("Update started.");
+            Stopwatch watch = Stopwatch.StartNew();
             CommunityPricesRoot root = wrapper.GetCommunityPricesAsync().Result;
             List<DbPriceItem> items = new List<DbPriceItem>();
 
@@ -197,15 +204,76 @@
                 }
             }
 
-            try
+            int inserted = 0, updated = 0;
+
+            using (var db = new SQLiteConnection(dbService.Path))
             {
-                db.UpdatePriceItems(items);
+                // First, insert new
+                try
+                {
+                    inserted = db.InsertAll(items, extra: "IF NOT EXISTS");
+                }
+                catch (Exception ex)
+                {
+                    log.Warn(ex, ex.Message, null);
+                }
+
+                // Second, update
+                try
+                {
+                    db.BeginTransaction();
+                    for (int i = 0; i < items.Count; i++)
+                    {
+                        var cmd = db.CreateCommand(
+                            @"UPDATE CommunityPrices
+                        SET Currency=?, Value=?, HighValue=?, LastUpdate=?, Difference=?
+                        WHERE DefIndex=?
+                        AND Quality=?
+                        AND Craftability=?
+                        AND EffectOrSeries=?
+                        AND Australium=?",
+                            items[i].Currency,
+                            items[i].Value,
+                            items[i].HighValue,
+                            items[i].LastUpdate,
+                            items[i].Difference,
+                            items[i].DefIndex,
+                            items[i].Quality,
+                            items[i].Craftability,
+                            items[i].EffectOrSeries,
+                            items[i].Australium);
+                        updated += cmd.ExecuteNonQuery();
+                        if (i % 0 == 0 || i == items.Count - 1)
+                        {
+                            while (true)
+                            {
+                                if (!db.IsInTransaction)
+                                {
+                                    db.Commit();
+                                    if (i != items.Count - 1)
+                                    {
+                                        db.BeginTransaction();
+                                    }
+                                    break;
+                                }
+                            }
+                        }
+                    }
+                }
+                catch (Exception ex)
+                {
+                    log.Warn(ex, ex.Message, null);
+                }
+                
             }
-            catch (Exception ex)
-            {
-                log.Warn(ex, ex.Message, null);
-            }
-            log.Info("Update complete.");
+            watch.Stop();
+            log.Info($"Update complete - inserted {inserted} records and updated {updated} records after {watch.ElapsedMilliseconds}ms");
+        }
+
+        public void Setup(DbService dbService, BackpackWrapper wrapper)
+        {
+            this.dbService = dbService;
+            this.wrapper = wrapper;
         }
     }
 }
