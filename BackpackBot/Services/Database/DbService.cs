@@ -19,10 +19,14 @@
 
         public string Path { get; private set; }
         
-        public async Task Setup()
+        public void Setup()
         {
-            SQLiteAsyncConnection db = new SQLiteAsyncConnection(Path);
-            await db.CreateTablesAsync(types: new Type[] { typeof(DbCurrency), typeof(DbPriceItem), typeof(DbSpecialItem) }).ConfigureAwait(false);
+            using (var db = new SQLiteConnection(Path))
+            {
+                db.CreateTable<DbCurrency>();
+                db.CreateTable<DbPriceItem>();
+                db.CreateTable<DbSpecialItem>();
+            }
         }
     }
 }

@@ -11,7 +11,7 @@
     using NLog;
     using SQLite;
 
-    public class DbPricesUpdater : IJob
+    public class DbPricesUpdater
     {
         private static BotConfig config = new BotConfig();
         private static Logger log = LogManager.GetCurrentClassLogger();
@@ -144,11 +144,13 @@
         private DbService dbService;
         private BackpackWrapper wrapper;
 
-        public DbPricesUpdater()
+        public DbPricesUpdater(DbService dbService, BackpackWrapper wrapper)
         {
+            this.dbService = dbService;
+            this.wrapper = wrapper;
         }
 
-        public void Execute()
+        public void Update()
         {
             log.Info("Update started.");
             Stopwatch watch = Stopwatch.StartNew();
@@ -211,7 +213,7 @@
                 // First, insert new
                 try
                 {
-                    inserted = db.InsertAll(items, extra: "IF NOT EXISTS");
+                    inserted = db.InsertAll(items, extra: "OR IGNORE");
                 }
                 catch (Exception ex)
                 {
@@ -225,13 +227,7 @@
                     for (int i = 0; i < items.Count; i++)
                     {
                         var cmd = db.CreateCommand(
-                            @"UPDATE CommunityPrices
-                        SET Currency=?, Value=?, HighValue=?, LastUpdate=?, Difference=?
-                        WHERE DefIndex=?
-                        AND Quality=?
-                        AND Craftability=?
-                        AND EffectOrSeries=?
-                        AND Australium=?",
+                            @"UPDATE CommunityPrices SET Currency=?, Value=?, HighValue=?, LastUpdate=?, Difference=? WHERE DefIndex=? AND Quality=? AND Craftability=? AND EffectOrSeries=? AND Australium=?",
                             items[i].Currency,
                             items[i].Value,
                             items[i].HighValue,
@@ -242,20 +238,16 @@
                             items[i].Craftability,
                             items[i].EffectOrSeries,
                             items[i].Australium);
+                        log.Info(cmd.CommandText);
                         updated += cmd.ExecuteNonQuery();
-                        if (i % 0 == 0 || i == items.Count - 1)
+                        if (i % 10 == 0 || i == items.Count - 1)
                         {
-                            while (true)
+                            log.Info("COMMIT");
+                            db.Commit();
+                            if (i != items.Count - 1)
                             {
-                                if (!db.IsInTransaction)
-                                {
-                                    db.Commit();
-                                    if (i != items.Count - 1)
-                                    {
-                                        db.BeginTransaction();
-                                    }
-                                    break;
-                                }
+                                log.Info("NEW TRANS");
+                                db.BeginTransaction();
                             }
                         }
                     }
@@ -268,12 +260,6 @@
             }
             watch.Stop();
             log.Info($"Update complete - inserted {inserted} records and updated {updated} records after {watch.ElapsedMilliseconds}ms");
-        }
-
-        public void Setup(DbService dbService, BackpackWrapper wrapper)
-        {
-            this.dbService = dbService;
-            this.wrapper = wrapper;
         }
     }
 }

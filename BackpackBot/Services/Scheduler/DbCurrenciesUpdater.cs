@@ -11,18 +11,20 @@
     using NLog;
     using SQLite;
 
-    public class DbCurrenciesUpdater : IJob
+    public class DbCurrenciesUpdater
     {
         private static BotConfig config = new BotConfig();
         private static Logger log = LogManager.GetCurrentClassLogger();
         private DbService dbService;
         private BackpackWrapper wrapper;
 
-        public DbCurrenciesUpdater()
+        public DbCurrenciesUpdater(DbService dbService, BackpackWrapper wrapper)
         {
+            this.dbService = dbService;
+            this.wrapper = wrapper;
         }
 
-        public void Execute()
+        public void Update()
         {
             log.Info("Update started.");
             Stopwatch watch = Stopwatch.StartNew();
@@ -53,7 +55,7 @@
                 // First, insert new
                 try
                 {
-                    inserted = db.InsertAll(items, extra: "IF NOT EXISTS");
+                    inserted = db.InsertAll(items, extra: "OR IGNORE");
                 }
                 catch (Exception ex)
                 {
@@ -73,12 +75,6 @@
 
             watch.Stop();
             log.Info($"Update complete - Inserted {inserted} items and updated {updated} items - took {watch.ElapsedMilliseconds}ms");
-        }
-
-        public void Setup(DbService dbService, BackpackWrapper wrapper)
-        {
-            this.dbService = dbService;
-            this.wrapper = wrapper;
         }
     }
 }

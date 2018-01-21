@@ -12,16 +12,13 @@
 
         public DbSchedulerService(DbService db, BackpackWrapper wrapper)
         {
-            DbPricesUpdater pricesUpdater = new DbPricesUpdater();
-            DbCurrenciesUpdater currenciesUpdater = new DbCurrenciesUpdater();
-            DbSpecialItemsUpdater specialItemsUpdater = new DbSpecialItemsUpdater();
-            pricesUpdater.Setup(db, wrapper);
-            currenciesUpdater.Setup(db, wrapper);
-            specialItemsUpdater.Setup(db, wrapper);
+            DbPricesUpdater pricesUpdater = new DbPricesUpdater(db, wrapper);
+            DbCurrenciesUpdater currenciesUpdater = new DbCurrenciesUpdater(db, wrapper);
+            DbSpecialItemsUpdater specialItemsUpdater = new DbSpecialItemsUpdater(db, wrapper);
 
-            Schedule<DbCurrenciesUpdater>().ToRunNow().AndEvery(1).Hours();
-            Schedule<DbPricesUpdater>().ToRunNow().AndEvery(1).Hours();
-            Schedule<DbSpecialItemsUpdater>().ToRunNow();
+            Schedule(() => pricesUpdater.Update()).ToRunNow().AndEvery(1).Hours();
+            Schedule(() => currenciesUpdater.Update()).ToRunNow().AndEvery(1).Hours();
+            Schedule(() => specialItemsUpdater.Update()).ToRunNow();
         }
 
         public void Start()

@@ -19,6 +19,7 @@
             Logging.SetupLogger();
             BotConfig config = new BotConfig();
             DbService dbService = new DbService(Path.Combine(Directory.GetCurrentDirectory(), "Data/BackpackBot.db"));
+            dbService.Setup();
             BackpackWrapper wrapper = new BackpackWrapper(config.BackpackApiKey);
             DbSchedulerService scheduler = new DbSchedulerService(dbService, wrapper);
 
