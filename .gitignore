@@ -300,3 +300,4 @@ __pycache__/
 
 # Personal stuff
 *BotConfig.json
+*BackpackBot.db

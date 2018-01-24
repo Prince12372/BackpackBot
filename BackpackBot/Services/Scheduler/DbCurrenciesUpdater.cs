@@ -7,18 +7,15 @@
     using BackpackBot.Services.Database.Models;
     using BackpackWebAPI;
     using BackpackWebAPI.Models;
-    using FluentScheduler;
     using NLog;
-    using SQLite;
 
     public class DbCurrenciesUpdater
     {
-        private static BotConfig config = new BotConfig();
         private static Logger log = LogManager.GetCurrentClassLogger();
-        private Database.SQLiteConnection dbService;
+        private DbService dbService;
         private BackpackWrapper wrapper;
 
-        public DbCurrenciesUpdater(Database.SQLiteConnection dbService, BackpackWrapper wrapper)
+        public DbCurrenciesUpdater(DbService dbService, BackpackWrapper wrapper)
         {
             this.dbService = dbService;
             this.wrapper = wrapper;
@@ -48,10 +45,7 @@
                     });
             }
 
-            (int updated, int inserted) = UpdateAndInsert(items);
-
-            watch.Stop();
-            log.Info($"Update complete - inserted {inserted} records and updated {updated} records after {watch.ElapsedMilliseconds / 1000.0}s");
+            dbService.UpdateAndInsert(items);
         }
     }
 }

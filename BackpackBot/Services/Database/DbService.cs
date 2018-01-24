@@ -6,26 +6,25 @@
     using System;
     using System.Collections.Generic;
 
-    public class SQLiteConnection
+    public class DbService
     {
-        private readonly Logger log = LogManager.GetCurrentClassLogger();
-
-        public SQLiteConnection(string path)
+        private Logger log = LogManager.GetCurrentClassLogger();
+        public DbService(string path)
         {
             Path = path;
         }
 
         public string Path { get; private set; }
-        
+
         public void Setup()
         {
-            using (var db = new SQLiteConnection(Path))
+            using (var conn = new SQLiteConnection(Path))
             {
                 try
                 {
-                    db.CreateTable<DbPriceItem>();
-                    db.CreateTable<DbCurrency>();
-                    db.CreateTable<DbSpecialItem>();
+                    conn.CreateTable<DbPriceItem>();
+                    conn.CreateTable<DbCurrency>();
+                    conn.CreateTable<DbSpecialItem>();
                 }
                 catch (Exception ex)
                 {
@@ -35,6 +34,23 @@
             }
         }
 
-        
+        public (int, int) UpdateAndInsert<T>(List<T> items)
+        {
+            (int updated, int inserted) = (0, 0);
+            using (var conn = new SQLiteConnection(Path))
+            {
+                try
+                {
+                    (updated, inserted) = (conn.UpdateAll(items), conn.InsertAll(items, "OR IGNORE"));
+                }
+                catch (Exception ex)
+                {
+                    log.Warn(ex, ex.Message);
+                    log.Warn(ex, ex.StackTrace);
+                }
+            }
+
+            return (updated, inserted);
+        }
     }
 }

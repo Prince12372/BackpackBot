@@ -18,7 +18,7 @@
         {
             Logging.SetupLogger();
             BotConfig config = new BotConfig();
-            SQLiteConnection dbService = new SQLiteConnection(Path.Combine(Directory.GetCurrentDirectory(), "Data/BackpackBot.db"));
+            DbService dbService = new DbService(Path.Combine(Directory.GetCurrentDirectory(), "Data/BackpackBot.db"));
             dbService.Setup();
             BackpackWrapper wrapper = new BackpackWrapper(config.BackpackApiKey);
             DbSchedulerService scheduler = new DbSchedulerService(dbService, wrapper);

@@ -1,8 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
-
-namespace BackpackBot.Services.Database.Models
+﻿namespace BackpackBot.Services.Database.Models
 {
     using SQLite;
 

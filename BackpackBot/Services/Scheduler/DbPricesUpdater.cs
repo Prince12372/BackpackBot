@@ -7,13 +7,10 @@
     using BackpackBot.Services.Database.Models;
     using BackpackWebAPI;
     using BackpackWebAPI.Models;
-    using FluentScheduler;
     using NLog;
-    using SQLite;
 
     public class DbPricesUpdater
     {
-        private static BotConfig config = new BotConfig();
         private static Logger log = LogManager.GetCurrentClassLogger();
         private readonly Dictionary<string, string> unusualEffects = new Dictionary<string, string>()
         {
@@ -141,10 +138,10 @@
             { "14", "Collector's" },
             { "15", "Decorated Weapon" }
         };
-        private Database.SQLiteConnection dbService;
+        private DbService dbService;
         private BackpackWrapper wrapper;
 
-        public DbPricesUpdater(Database.SQLiteConnection dbService, BackpackWrapper wrapper)
+        public DbPricesUpdater(DbService dbService, BackpackWrapper wrapper)
         {
             this.dbService = dbService;
             this.wrapper = wrapper;
@@ -224,36 +221,7 @@
                 }
             }
 
-            int inserted = 0, updated = 0;
-
-            using (var db = new SQLite.SQLiteConnection(dbService.Path))
-            {
-                // First, insert new
-                try
-                {
-                    inserted = db.InsertAll(items, extra: "OR IGNORE");
-                }
-                catch (Exception ex)
-                {
-                    log.Warn(ex, ex.Message, null);
-                }
-
-                // Second, update
-                try
-                {
-                    updated = db.UpdateAll(items);
-                }
-                catch (Exception ex)
-                {
-                    log.Warn(ex, ex.Message, null);
-                    log.Warn(ex, ex.StackTrace, null);
-                }
-                
-            }
-            watch.Stop();
-            log.Info($"Update complete - inserted {inserted} records and updated {updated} records after {watch.ElapsedMilliseconds / 1000.0}s");
+            dbService.UpdateAndInsert(items);
         }
-
-
     }
 }

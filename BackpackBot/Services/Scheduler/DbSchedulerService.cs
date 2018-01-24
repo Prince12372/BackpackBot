@@ -10,15 +10,15 @@
         private static BotConfig config = new BotConfig();
         private static Logger log = LogManager.GetCurrentClassLogger();
 
-        public DbSchedulerService(SQLiteConnection db, BackpackWrapper wrapper)
+        public DbSchedulerService(DbService db, BackpackWrapper wrapper)
         {
             DbPricesUpdater pricesUpdater = new DbPricesUpdater(db, wrapper);
             DbCurrenciesUpdater currenciesUpdater = new DbCurrenciesUpdater(db, wrapper);
             DbSpecialItemsUpdater specialItemsUpdater = new DbSpecialItemsUpdater(db, wrapper);
 
-            Schedule(() => pricesUpdater.Update()).ToRunNow().AndEvery(1).Hours();
-            Schedule(() => currenciesUpdater.Update()).ToRunNow().AndEvery(1).Hours();
-            Schedule(() => specialItemsUpdater.Update()).ToRunNow();
+            Schedule(() => pricesUpdater.Update()).NonReentrant().ToRunNow().AndEvery(30).Minutes();
+            Schedule(() => currenciesUpdater.Update()).NonReentrant().ToRunNow().AndEvery(1).Hours();
+            Schedule(() => specialItemsUpdater.Update()).NonReentrant().ToRunNow().AndEvery(1).Weeks(); ;
         }
 
         public void Start()

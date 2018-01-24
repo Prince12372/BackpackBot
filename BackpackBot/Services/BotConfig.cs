@@ -46,7 +46,7 @@ namespace BackpackBot.Services
             }
             catch (Exception ex)
             {
-                log.Fatal(ex, ex.Message, null);
+                log.Fatal(ex, ex.Message);
                 throw;
             }
         }
