@@ -7,11 +7,15 @@
     using BackpackBot.Services.Database.Models;
     using BackpackWebAPI;
     using BackpackWebAPI.Models;
+    using FluentScheduler;
     using NLog;
 
-    public class DbPricesUpdater
+    public class DbPricesUpdater : IJob
     {
+        private static BotConfig config = new BotConfig();
         private static Logger log = LogManager.GetCurrentClassLogger();
+        private static BackpackWrapper wrapper = new BackpackWrapper(config.BackpackApiKey);
+
         private readonly Dictionary<string, string> unusualEffects = new Dictionary<string, string>()
         {
             { "4", "Community Sparkle" },
@@ -138,20 +142,26 @@
             { "14", "Collector's" },
             { "15", "Decorated Weapon" }
         };
-        private DbService dbService;
-        private BackpackWrapper wrapper;
 
-        public DbPricesUpdater(DbService dbService, BackpackWrapper wrapper)
+        public async void Execute()
         {
-            this.dbService = dbService;
-            this.wrapper = wrapper;
-        }
-
-        public void Update()
-        {
-            log.Info("Update started.");
+            log.Info("Update started");
             Stopwatch watch = Stopwatch.StartNew();
-            CommunityPricesRoot root = wrapper.GetCommunityPricesAsync().Result;
+            CommunityPricesRoot root = null;
+            try
+            {
+                root = await wrapper.GetCommunityPricesAsync().ConfigureAwait(false);
+            }
+            catch (Exception ex)
+            {
+                log.Warn("Update did not complete successfully - see below");
+                log.Warn(ex, ex.Message);
+                if (ex.InnerException != null)
+                {
+                    log.Warn(ex.InnerException, ex.InnerException.Message);
+                }
+                return;
+            }
             List<DbPriceItem> items = new List<DbPriceItem>();
 
             foreach (var item in root.Response.Items)
@@ -221,7 +231,18 @@
                 }
             }
 
-            dbService.UpdateAndInsert(items);
+            try
+            {
+                (int updated, int inserted) = DbService.UpdateAndInsert(items);
+                log.Info($"Update completed - updated {updated} rows and inserted {inserted} new rows after {watch.ElapsedMilliseconds / 1000.0}s");
+            }
+            catch (Exception ex)
+            {
+                log.Warn("Update did not complete successfully - see below");
+                log.Warn(ex, ex.Message);
+                log.Warn(ex, ex.StackTrace);
+            }
+            watch.Stop();
         }
     }
 }

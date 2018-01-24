@@ -6,51 +6,43 @@
     using System;
     using System.Collections.Generic;
 
-    public class DbService
+    public static class DbService
     {
-        private Logger log = LogManager.GetCurrentClassLogger();
-        public DbService(string path)
-        {
-            Path = path;
-        }
+        private static BotConfig config = new BotConfig();
+        private static Logger log = LogManager.GetCurrentClassLogger();
 
-        public string Path { get; private set; }
-
-        public void Setup()
+        public static (int, int, int) SetupDb()
         {
-            using (var conn = new SQLiteConnection(Path))
+            using (var conn = new SQLiteConnection(config.DbLocation))
             {
                 try
                 {
-                    conn.CreateTable<DbPriceItem>();
-                    conn.CreateTable<DbCurrency>();
-                    conn.CreateTable<DbSpecialItem>();
+                    return (conn.CreateTable<DbPriceItem>(), conn.CreateTable<DbCurrency>(), conn.CreateTable<DbSpecialItem>());
                 }
                 catch (Exception ex)
                 {
                     log.Error(ex, ex.Message);
                     log.Error(ex, ex.StackTrace);
                 }
+                return (default, default, default);
             }
         }
 
-        public (int, int) UpdateAndInsert<T>(List<T> items)
+        public static (int, int) UpdateAndInsert<T>(List<T> items)
         {
-            (int updated, int inserted) = (0, 0);
-            using (var conn = new SQLiteConnection(Path))
+            using (var conn = new SQLiteConnection(config.DbLocation))
             {
                 try
                 {
-                    (updated, inserted) = (conn.UpdateAll(items), conn.InsertAll(items, "OR IGNORE"));
+                    return (conn.UpdateAll(items), conn.InsertAll(items, "OR IGNORE"));
                 }
                 catch (Exception ex)
                 {
-                    log.Warn(ex, ex.Message);
-                    log.Warn(ex, ex.StackTrace);
+                    log.Error(ex, ex.Message);
+                    log.Error(ex, ex.StackTrace);
                 }
+                return (default, default);
             }
-
-            return (updated, inserted);
-        }
+        } 
     }
 }

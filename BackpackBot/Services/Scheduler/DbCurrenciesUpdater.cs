@@ -7,25 +7,34 @@
     using BackpackBot.Services.Database.Models;
     using BackpackWebAPI;
     using BackpackWebAPI.Models;
+    using FluentScheduler;
     using NLog;
 
-    public class DbCurrenciesUpdater
+    public class DbCurrenciesUpdater : IJob
     {
+        private static BotConfig config = new BotConfig();
         private static Logger log = LogManager.GetCurrentClassLogger();
-        private DbService dbService;
-        private BackpackWrapper wrapper;
+        private static BackpackWrapper wrapper = new BackpackWrapper(config.BackpackApiKey);
 
-        public DbCurrenciesUpdater(DbService dbService, BackpackWrapper wrapper)
-        {
-            this.dbService = dbService;
-            this.wrapper = wrapper;
-        }
-
-        public void Update()
+        public async void Execute()
         {
             log.Info("Update started.");
             Stopwatch watch = Stopwatch.StartNew();
-            CurrenciesRoot root = wrapper.GetCurrenciesAsync().Result;
+            CurrenciesRoot root = null;
+            try
+            {
+                root = await wrapper.GetCurrenciesAsync().ConfigureAwait(false);
+            }
+            catch (Exception ex)
+            {
+                log.Warn("Update did not complete successfully - see below");
+                log.Warn(ex, ex.Message);
+                if (ex.InnerException != null)
+                {
+                    log.Warn(ex.InnerException, ex.InnerException.Message);
+                }
+                return;
+            }
             List<DbCurrency> items = new List<DbCurrency>();
 
             foreach (Currency c in root.Response.Currencies.Values)
@@ -45,7 +54,18 @@
                     });
             }
 
-            dbService.UpdateAndInsert(items);
+            try
+            {
+                (int updated, int inserted) = DbService.UpdateAndInsert(items);
+                log.Info($"Update completed - updated {updated} rows and inserted {inserted} new rows after {watch.ElapsedMilliseconds / 1000.0}s");
+            }
+            catch (Exception ex)
+            {
+                log.Warn("Update did not complete successfully - see below");
+                log.Warn(ex, ex.Message);
+                log.Warn(ex, ex.StackTrace);
+            }
+            watch.Stop();
         }
     }
 }

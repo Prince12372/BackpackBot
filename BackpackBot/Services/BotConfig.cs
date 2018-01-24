@@ -1,10 +1,7 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
-
-namespace BackpackBot.Services
+﻿namespace BackpackBot.Services
 {
     using System;
+    using System.Collections.Generic;
     using System.Collections.Immutable;
     using System.IO;
     using System.Linq;
@@ -42,6 +39,7 @@ namespace BackpackBot.Services
                 SteamApiKey = data.SelectToken("SteamApiKey").ToString();
                 SuccessColor = new Color(Convert.ToUInt32(data.SelectToken("SuccessColor").ToString(), 16));
                 ErrorColor = new Color(Convert.ToUInt32(data.SelectToken("ErrorColor").ToString(), 16));
+                DbLocation = Path.Combine(Directory.GetCurrentDirectory(), data.SelectToken("DbLocation").ToString());
                 OwnerIds = data.SelectToken("OwnerIds").Children().Select(c => ulong.Parse(c.ToString())).ToList();
             }
             catch (Exception ex)
@@ -60,6 +58,8 @@ namespace BackpackBot.Services
         public Color SuccessColor { get; private set; }
 
         public Color ErrorColor { get; private set; }
+
+        public string DbLocation { get; private set; }
         
         public IReadOnlyList<ulong> OwnerIds { get; private set; }
 

@@ -17,13 +17,8 @@
         static async Task MainAsync()
         {
             Logging.SetupLogger();
-            BotConfig config = new BotConfig();
-            DbService dbService = new DbService(Path.Combine(Directory.GetCurrentDirectory(), "Data/BackpackBot.db"));
-            dbService.Setup();
-            BackpackWrapper wrapper = new BackpackWrapper(config.BackpackApiKey);
-            DbSchedulerService scheduler = new DbSchedulerService(dbService, wrapper);
-
-            scheduler.Start();
+            DbService.SetupDb();
+            DbSchedulerService.Start();
 
             await Task.Delay(-1);
         }

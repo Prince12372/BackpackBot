@@ -1,10 +1,11 @@
 ﻿{
-    "BotToken": "",
-    "BackpackApiKey": "",
-    "SteamApiKey": "",
-    "SuccessColor": "00FF00",
-    "ErrorColor": "FF0000",
-    "OwnerIds": [
-        0
-    ]
+  "BotToken": "",
+  "BackpackApiKey": "",
+  "SteamApiKey": "",
+  "SuccessColor": "00FF00",
+  "ErrorColor": "FF0000",
+  "DbLocation": "Data/BackpackBot.db",
+  "OwnerIds": [
+    0
+  ]
 }
