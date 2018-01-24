@@ -15,10 +15,10 @@
     {
         private static BotConfig config = new BotConfig();
         private static Logger log = LogManager.GetCurrentClassLogger();
-        private DbService dbService;
+        private Database.SQLiteConnection dbService;
         private BackpackWrapper wrapper;
 
-        public DbCurrenciesUpdater(DbService dbService, BackpackWrapper wrapper)
+        public DbCurrenciesUpdater(Database.SQLiteConnection dbService, BackpackWrapper wrapper)
         {
             this.dbService = dbService;
             this.wrapper = wrapper;
@@ -48,33 +48,10 @@
                     });
             }
 
-            int inserted = 0, updated = 0;
-
-            using (var db = new SQLiteConnection(dbService.Path))
-            {
-                // First, insert new
-                try
-                {
-                    inserted = db.InsertAll(items, extra: "OR IGNORE");
-                }
-                catch (Exception ex)
-                {
-                    log.Warn(ex, ex.Message, null);
-                }
-
-                // Second, update
-                try
-                {
-                    updated = db.UpdateAll(items);
-                }
-                catch (Exception ex)
-                {
-                    log.Warn(ex, ex.Message, null);
-                }
-            }
+            (int updated, int inserted) = UpdateAndInsert(items);
 
             watch.Stop();
-            log.Info($"Update complete - Inserted {inserted} items and updated {updated} items - took {watch.ElapsedMilliseconds}ms");
+            log.Info($"Update complete - inserted {inserted} records and updated {updated} records after {watch.ElapsedMilliseconds / 1000.0}s");
         }
     }
 }

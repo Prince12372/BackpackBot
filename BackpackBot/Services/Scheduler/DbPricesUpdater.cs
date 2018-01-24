@@ -141,10 +141,10 @@
             { "14", "Collector's" },
             { "15", "Decorated Weapon" }
         };
-        private DbService dbService;
+        private Database.SQLiteConnection dbService;
         private BackpackWrapper wrapper;
 
-        public DbPricesUpdater(DbService dbService, BackpackWrapper wrapper)
+        public DbPricesUpdater(Database.SQLiteConnection dbService, BackpackWrapper wrapper)
         {
             this.dbService = dbService;
             this.wrapper = wrapper;
@@ -177,28 +177,46 @@
                         {
                             foreach (var priceIndexKvp in craftability.Value)
                             {
+                                string itemUniqueId = string.Join('_', defindex, quality.Key, craftability.Key, priceIndexKvp.Key);
+                                long itemDefIndex = defindex;
+                                string itemName = item.Key;
+                                string itemQuality = qualityNames.ContainsKey(quality.Key) ? qualityNames[quality.Key] : null;
+                                string itemCraftability = craftability.Key;
+                                string itemEffectOrSeries = null;
+                                if ((item.Key.Contains("Crate") || item.Key.Contains("Case") && !item.Key.Contains("maker") && !priceIndexKvp.Key.Equals("0")))
+                                {
+                                    itemEffectOrSeries = $"Series #{priceIndexKvp.Key}";
+                                }
+                                else if (unusualEffects.ContainsKey(priceIndexKvp.Key))
+                                {
+                                    itemEffectOrSeries = unusualEffects[priceIndexKvp.Key];
+                                }
+                                bool? itemIsAustralium = priceIndexKvp.Value.Australium;
+                                string itemCurrencyType = priceIndexKvp.Value.CurrencyType;
+                                double? itemValue = priceIndexKvp.Value.Value;
+                                double? itemHighValue = priceIndexKvp.Value.ValueHigh;
+                                string itemLastUpdate = null;
+                                if (priceIndexKvp.Value.LastUpdate.HasValue)
+                                {
+                                    DateTime since = new DateTime(1970, 1, 1, 0, 0, 0, 0).AddSeconds(priceIndexKvp.Value.LastUpdate.Value);
+                                    itemLastUpdate = string.Format("{0:g}", since);
+                                }
+                                double? itemDifference = priceIndexKvp.Value.Difference;
 
                                 items.Add(new DbPriceItem
                                     {
-                                        DefIndex = defindex,
-                                        Name = item.Key,
-                                        Quality = qualityNames.ContainsKey(quality.Key) ? qualityNames[quality.Key] : null,
-                                        Craftability = craftability.Key,
-                                        EffectOrSeries = (item.Key.Contains("Crate") || item.Key.Contains("Case")) && !item.Key.Contains("maker") && !priceIndexKvp.Key.Equals("0")
-                                            ? $"Series #{priceIndexKvp.Key}"
-                                            : unusualEffects.ContainsKey(priceIndexKvp.Key)
-                                            ? unusualEffects[priceIndexKvp.Key]
-                                            : null,
-                                        Australium = priceIndexKvp.Value.Australium,
-                                        Currency = priceIndexKvp.Value.CurrencyType,
-                                        Value = priceIndexKvp.Value.Value,
-                                        HighValue = priceIndexKvp.Value.ValueHigh,
-                                        LastUpdate = (priceIndexKvp.Value.LastUpdate.HasValue)
-                                            ? string.Format("{0:g}",
-                                                new DateTime(1970, 1, 1, 0, 0, 0, 0)
-                                                    .AddSeconds(priceIndexKvp.Value.LastUpdate.Value))
-                                            : null,
-                                        Difference = priceIndexKvp.Value.Difference
+                                        UniqueId = itemUniqueId,
+                                        DefIndex = itemDefIndex,
+                                        Name = itemName,
+                                        Quality = itemQuality,
+                                        Craftability = itemCraftability,
+                                        EffectOrSeries = itemEffectOrSeries,
+                                        Australium = itemIsAustralium,
+                                        Currency = itemCurrencyType,
+                                        Value = itemValue,
+                                        HighValue = itemHighValue,
+                                        LastUpdate = itemLastUpdate,
+                                        Difference = itemDifference
                                     });
                             }
                         }
@@ -208,7 +226,7 @@
 
             int inserted = 0, updated = 0;
 
-            using (var db = new SQLiteConnection(dbService.Path))
+            using (var db = new SQLite.SQLiteConnection(dbService.Path))
             {
                 // First, insert new
                 try
@@ -223,43 +241,19 @@
                 // Second, update
                 try
                 {
-                    db.BeginTransaction();
-                    for (int i = 0; i < items.Count; i++)
-                    {
-                        var cmd = db.CreateCommand(
-                            @"UPDATE CommunityPrices SET Currency=?, Value=?, HighValue=?, LastUpdate=?, Difference=? WHERE DefIndex=? AND Quality=? AND Craftability=? AND EffectOrSeries=? AND Australium=?",
-                            items[i].Currency,
-                            items[i].Value,
-                            items[i].HighValue,
-                            items[i].LastUpdate,
-                            items[i].Difference,
-                            items[i].DefIndex,
-                            items[i].Quality,
-                            items[i].Craftability,
-                            items[i].EffectOrSeries,
-                            items[i].Australium);
-                        log.Info(cmd.CommandText);
-                        updated += cmd.ExecuteNonQuery();
-                        if (i % 10 == 0 || i == items.Count - 1)
-                        {
-                            log.Info("COMMIT");
-                            db.Commit();
-                            if (i != items.Count - 1)
-                            {
-                                log.Info("NEW TRANS");
-                                db.BeginTransaction();
-                            }
-                        }
-                    }
+                    updated = db.UpdateAll(items);
                 }
                 catch (Exception ex)
                 {
                     log.Warn(ex, ex.Message, null);
+                    log.Warn(ex, ex.StackTrace, null);
                 }
                 
             }
             watch.Stop();
-            log.Info($"Update complete - inserted {inserted} records and updated {updated} records after {watch.ElapsedMilliseconds}ms");
+            log.Info($"Update complete - inserted {inserted} records and updated {updated} records after {watch.ElapsedMilliseconds / 1000.0}s");
         }
+
+
     }
 }

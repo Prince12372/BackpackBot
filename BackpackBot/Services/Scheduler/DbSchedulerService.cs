@@ -10,7 +10,7 @@
         private static BotConfig config = new BotConfig();
         private static Logger log = LogManager.GetCurrentClassLogger();
 
-        public DbSchedulerService(DbService db, BackpackWrapper wrapper)
+        public DbSchedulerService(SQLiteConnection db, BackpackWrapper wrapper)
         {
             DbPricesUpdater pricesUpdater = new DbPricesUpdater(db, wrapper);
             DbCurrenciesUpdater currenciesUpdater = new DbCurrenciesUpdater(db, wrapper);

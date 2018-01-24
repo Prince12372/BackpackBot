@@ -15,10 +15,10 @@
     {
         private static BotConfig config = new BotConfig();
         private static Logger log = LogManager.GetCurrentClassLogger();
-        private DbService dbService;
+        private Database.SQLiteConnection dbService;
         private BackpackWrapper wrapper;
 
-        public DbSpecialItemsUpdater(DbService dbService, BackpackWrapper wrapper)
+        public DbSpecialItemsUpdater(Database.SQLiteConnection dbService, BackpackWrapper wrapper)
         {
             this.dbService = dbService;
             this.wrapper = wrapper;
@@ -47,7 +47,7 @@
 
             int inserted = 0, updated = 0;
 
-            using (var db = new SQLiteConnection(dbService.Path))
+            using (var db = new SQLite.SQLiteConnection(dbService.Path))
             {
                 // First, insert new
                 try
@@ -57,6 +57,7 @@
                 catch (Exception ex)
                 {
                     log.Warn(ex, ex.Message, null);
+                    log.Warn(ex, ex.StackTrace, null);
                 }
 
                 // Second, update
@@ -68,12 +69,13 @@
                     catch (Exception ex)
                     {
                         log.Warn(ex, ex.Message, null);
+                        log.Warn(ex, ex.StackTrace, null);
                     }
                 }
             }
 
             watch.Stop();
-            log.Info($"Update complete - Inserted {inserted} items and updated {updated} items - took {watch.ElapsedMilliseconds}ms");
+            log.Info($"Update complete - inserted {inserted} records and updated {updated} records after {watch.ElapsedMilliseconds / 1000.0}s");
 
         }
     }

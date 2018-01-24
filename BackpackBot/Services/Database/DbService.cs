@@ -1,18 +1,16 @@
 ﻿namespace BackpackBot.Services.Database
 {
-    using System;
-    using System.Collections.Generic;
-    using System.IO;
-    using System.Threading.Tasks;
     using BackpackBot.Services.Database.Models;
     using NLog;
     using SQLite;
+    using System;
+    using System.Collections.Generic;
 
-    public class DbService
+    public class SQLiteConnection
     {
         private readonly Logger log = LogManager.GetCurrentClassLogger();
 
-        public DbService(string path)
+        public SQLiteConnection(string path)
         {
             Path = path;
         }
@@ -23,10 +21,20 @@
         {
             using (var db = new SQLiteConnection(Path))
             {
-                db.CreateTable<DbCurrency>();
-                db.CreateTable<DbPriceItem>();
-                db.CreateTable<DbSpecialItem>();
+                try
+                {
+                    db.CreateTable<DbPriceItem>();
+                    db.CreateTable<DbCurrency>();
+                    db.CreateTable<DbSpecialItem>();
+                }
+                catch (Exception ex)
+                {
+                    log.Error(ex, ex.Message);
+                    log.Error(ex, ex.StackTrace);
+                }
             }
         }
+
+        
     }
 }
