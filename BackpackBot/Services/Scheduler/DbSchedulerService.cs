@@ -12,7 +12,7 @@
         public static void Start()
         {
             log.Info("Scheduler service started.");
-            registry.Schedule<DbPricesUpdater>().NonReentrant().ToRunNow().AndEvery(30).Minutes();
+            registry.Schedule<DbPricesUpdater>().NonReentrant().ToRunNow().AndEvery(1).Hours().DelayFor(5).Minutes();
             registry.Schedule<DbCurrenciesUpdater>().NonReentrant().ToRunNow().AndEvery(1).Hours();
             registry.Schedule<DbSpecialItemsUpdater>().NonReentrant().ToRunNow().AndEvery(1).Weeks();
             JobManager.Initialize(registry);

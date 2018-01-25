@@ -18,7 +18,7 @@
         public string Quality { get; set; }
 
         [NotNull]
-        public string Craftability { get; set; }
+        public bool Craftable { get; set; }
 
         public string EffectOrSeries { get; set; }
 
@@ -30,7 +30,7 @@
 
         public double? HighValue { get; set; }
 
-        public string LastUpdate { get; set; }
+        public long? LastUpdate { get; set; }
 
         public double? Difference { get; set; }
     }

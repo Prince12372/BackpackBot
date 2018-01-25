@@ -18,7 +18,7 @@
 
         public async void Execute()
         {
-            log.Info("Update started.");
+            log.Info("Update started");
             Stopwatch watch = Stopwatch.StartNew();
             SpecialItemsRoot root = null;
             try
