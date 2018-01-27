@@ -40,7 +40,6 @@
 
             foreach (var item in root.Response.Items)
             {
-                //log.Info($"Processing item {item.Key}");
                 foreach (long defindex in item.Value.DefIndexes)
                 {
                     foreach (var quality in item.Value.Qualities)
@@ -58,28 +57,14 @@
                         {
                             foreach (var priceIndexKvp in craftability.Value)
                             {
-                                /*
-                                string itemUniqueId = ItemExtensions.CreateUniqueId(defindex, quality.Key, craftability.Key, priceIndexKvp.Key);
-                                long itemDefIndex = defindex;
-                                string itemName = item.Key;
-                                string itemQuality = quality.Key;
-                                bool itemCraftability = craftability.Key.Equals("Craftable");
-                                string itemEffectOrSeries = priceIndexKvp.Key;
-                                bool? itemIsAustralium = priceIndexKvp.Value.Australium;
-                                string itemCurrencyType = priceIndexKvp.Value.CurrencyType;
-                                double? itemValue = priceIndexKvp.Value.Value;
-                                double? itemHighValue = priceIndexKvp.Value.ValueHigh;
-                                long? itemLastUpdate = priceIndexKvp.Value.LastUpdate;
-                                double? itemDifference = priceIndexKvp.Value.Difference;
-                                */
                                 items.Add(new DbPriceItem
                                     {
-                                        UniqueId = ItemExtensions.CreateUniqueId(defindex, quality.Key, craftability.Key, priceIndexKvp.Key),
+                                        UniqueId = ItemExtensions.CreateUniqueId(defindex, quality.Key, craftability.Key.Equals("Craftable"), priceIndexKvp.Key, priceIndexKvp.Value.Australium ?? false),
                                         DefIndex = defindex,
                                         Name = item.Key,
                                         Quality = quality.Key,
                                         Craftable = craftability.Key.Equals("Craftable"),
-                                        EffectOrSeries = priceIndexKvp.Key,
+                                        PriceIndex = priceIndexKvp.Key,
                                         Australium = priceIndexKvp.Value.Australium,
                                         Currency = priceIndexKvp.Value.CurrencyType,
                                         Value = priceIndexKvp.Value.Value,

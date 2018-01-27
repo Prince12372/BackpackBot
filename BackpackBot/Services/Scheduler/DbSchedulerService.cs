@@ -1,7 +1,10 @@
 ﻿namespace BackpackBot.Services.Scheduler
 {
+    using System.Linq;
     using FluentScheduler;
     using NLog;
+    using System.Collections.Generic;
+    using System;
 
     public static class DbSchedulerService
     {
@@ -9,20 +12,18 @@
         private static Logger log = LogManager.GetCurrentClassLogger();
         private static Registry registry = new Registry();
 
-        public static void Start()
+        public static void Initialize()
         {
             log.Info("Scheduler service started.");
-            registry.Schedule<DbPricesUpdater>().NonReentrant().ToRunNow().AndEvery(1).Hours().DelayFor(5).Minutes();
-            registry.Schedule<DbCurrenciesUpdater>().NonReentrant().ToRunNow().AndEvery(1).Hours();
-            registry.Schedule<DbSpecialItemsUpdater>().NonReentrant().ToRunNow().AndEvery(1).Weeks();
-            JobManager.Initialize(registry);
-            JobManager.JobException += info => log.Fatal("An error just happened with a scheduled job: " + info.Exception);
-        }
 
-        public static void Stop()
-        {
-            log.Info("Scheduler service stopped.");
-            JobManager.Stop();
+            //registry.NonReentrantAsDefault();
+
+            registry.Schedule<DbPricesUpdater>().WithName("prices").ToRunNow().AndEvery(30).Minutes();
+            registry.Schedule<DbCurrenciesUpdater>().WithName("currencies").ToRunNow().AndEvery(1).Hours();
+            registry.Schedule<DbSpecialItemsUpdater>().WithName("specials").ToRunNow().AndEvery(24).Hours();
+            JobManager.Initialize(registry);
+
+            JobManager.JobException += jobException => log.Fatal($"An error just happened with a scheduled job: {jobException.Exception}");
         }
     }
 }

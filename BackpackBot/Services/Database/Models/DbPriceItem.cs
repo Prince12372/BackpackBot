@@ -20,7 +20,7 @@
         [NotNull]
         public bool Craftable { get; set; }
 
-        public string EffectOrSeries { get; set; }
+        public string PriceIndex { get; set; }
 
         public bool? Australium { get; set; }
 

@@ -133,11 +133,11 @@
             { "15", "Decorated Weapon" }
         };
 
-        public static string CreateUniqueId(long defindex, string quality, string craftability, string priceIndex)
-            => string.Join('_', $"{defindex}", $"{quality}", $"{(craftability.Equals("Craftable") ? 1 : 0)}", $"{priceIndex}");
+        public static string CreateUniqueId(long defindex, string quality, bool craftable, string priceIndex, bool australium)
+            => string.Join('_', $"{defindex}", $"{quality}", $"{Convert.ToInt32(craftable)}", $"{priceIndex}", Convert.ToInt32(australium));
 
-        public static string GetQualityName(this string quality)
-            => qualityNames.ContainsKey(quality) ? qualityNames[quality] : null;
+        public static string GetQualityName(this string qualityId)
+            => qualityNames.ContainsKey(qualityId) ? qualityNames[qualityId] : null;
 
         public static string GetEffectOrSeries(this string itemName, string priceIndex)
         {
