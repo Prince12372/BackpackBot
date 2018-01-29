@@ -93,5 +93,15 @@
 
             return sb.ToString();
         }
+
+        public static bool StartsWith(this string s, char[] letters)
+        {
+            foreach (char l in letters)
+            {
+                if (s.StartsWith(l))
+                    return true;
+            }
+            return false;
+        }
     }
 }

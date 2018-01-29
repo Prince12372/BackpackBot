@@ -1,10 +1,10 @@
 ﻿namespace BackpackBot.Modules.Admin
 {
+    using System.Collections.Generic;
     using System.Linq;
     using System.Threading.Tasks;
     using BackpackBot.Extensions;
     using BackpackBot.Services;
-    using BackpackBot.Services.Scheduler;
     using Discord;
     using Discord.Commands;
     using FluentScheduler;
@@ -14,8 +14,21 @@
     {
         private Logger log = LogManager.GetCurrentClassLogger();
         private BotConfig config = new BotConfig();
+        private List<string> types = new List<string>()
+        {
+            "prices",
+            "currencies",
+            "specials"
+        };
+        private List<string> actions = new List<string>()
+        {
+            "enable",
+            "disable",
+            "status"
+        };
 
         [Command("scheduler")]
+        [Alias("sched")]
         [Summary("Bot owner only. Used to enable/disable the database scheduler or check its status.")]
         private async Task SchedulerAsync(params string[] input)
         {
@@ -37,7 +50,7 @@
 
                 string type = input[0].ToLower(), action = input[1].ToLower();
 
-                if (!(type.Equals("prices") || type.Equals("currencies") || type.Equals("specials")) || !(action.Equals("start") || action.Equals("stop") || action.Equals("status") || action.Equals("next")))
+                if (!types.Contains(type) || !actions.Contains(action))
                 {
                     await Context.Message.AddReactionAsync(new Emoji("\U00002753")).ConfigureAwait(false);
                     return;
@@ -45,7 +58,7 @@
 
                 switch (action)
                 {
-                    case "start":
+                    case "enable":
                         if (JobManager.AllSchedules.First(y => y.Name.Equals(type)).Disabled)
                         {
                             JobManager.AllSchedules.First(y => y.Name.Equals(type)).Enable();
@@ -53,7 +66,7 @@
                         }
                         else await Context.Message.AddReactionAsync(new Emoji("\U000026a0")).ConfigureAwait(false);
                         break;
-                    case "stop":
+                    case "disable":
                         if (!JobManager.AllSchedules.First(y => y.Name.Equals(type)).Disabled)
                         {
                             JobManager.AllSchedules.First(y => y.Name.Equals(type)).Disable();
