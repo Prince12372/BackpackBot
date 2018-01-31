@@ -22,6 +22,7 @@
     <PackageReference Include="NLog" Version="4.5.0-rc03" />
     <PackageReference Include="NLog.Config" Version="4.5.0-rc03" />
     <PackageReference Include="sqlite-net-pcl" Version="1.4.118" />
+    <PackageReference Include="SteamWebAPI2" Version="4.0.7" />
   </ItemGroup>
 
 </Project>
