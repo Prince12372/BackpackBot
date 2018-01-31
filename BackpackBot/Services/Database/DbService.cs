@@ -47,14 +47,22 @@
             }
         }
 
-        public static List<string> GetUniqueItemNames()
+        public static Dictionary<long, string> GetUniqueItems()
         {
+            List<DbPriceItem> items = new List<DbPriceItem>();
+            Dictionary<long, string> dict = new Dictionary<long, string>();
             using (var conn = new SQLiteConnection(config.DbLocation))
             {
                 try
                 {
-                    var items = conn.Query(conn.GetMapping<DbPriceItem>(), @"SELECT Name FROM CommunityPrices").Cast<DbPriceItem>().ToList();
-                    return items.Select(c => c.Name).Distinct().ToList();
+                    items = conn.Query(conn.GetMapping<DbPriceItem>(), @"SELECT DISTINCT * FROM CommunityPrices").Cast<DbPriceItem>().ToList();
+                    foreach (DbPriceItem i in items)
+                    {
+                        if (!dict.ContainsKey(i.DefIndex))
+                        {
+                            dict.Add(i.DefIndex, i.Name);
+                        }
+                    }
                 }
                 catch (Exception ex)
                 {
@@ -62,16 +70,11 @@
                     log.Warn(ex, ex.StackTrace);
                 }
             }
-
-            return new List<string>()
-            {
-                "No unique items found."
-            };
+            return dict;
         }
         
-        public static bool TryGetDbPriceItem(long defindex, string quality, bool craftable, string priceIndex, bool australium, out DbPriceItem item)
+        public static bool TryGetDbPriceItem(string uniqueId, out DbPriceItem item)
         {
-            string uniqueId = ItemExtensions.CreateUniqueId(defindex, quality, craftable, priceIndex, australium);
             using (var conn = new SQLiteConnection(config.DbLocation))
             {
                 try

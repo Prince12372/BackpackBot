@@ -2,7 +2,7 @@
 {
     using System;
     using System.Collections.Generic;
-    using BackpackWebAPI.Models;
+    using System.Linq;
 
     public static class ItemExtensions
     {
@@ -132,6 +132,33 @@
             { "14", "Collector's" },
             { "15", "Decorated Weapon" }
         };
+
+        public static long GetDefIndex(string itemName, Dictionary<long, string> items)
+        {
+            List<string> itemNames = items.Values.ToList();
+
+            string closest = StringExtensions.GetBestMatchesFor(itemNames, itemName, 1).First();
+
+            return items.First(x => x.Value == closest).Key;
+        }
+
+        public static string GetQuality(string qualityName)
+        {
+            List<string> qualityIds = qualityNames.Values.ToList();
+
+            string closest = StringExtensions.GetBestMatchesFor(qualityIds, qualityName, 1).First();
+
+            return qualityNames.First(x => x.Value == closest).Key;
+        }
+
+        public static string GetPriceIndex(string effectName)
+        {
+            List<string> priceIndexes = unusualEffects.Values.ToList();
+
+            string closest = StringExtensions.GetBestMatchesFor(priceIndexes, effectName, 1).First();
+
+            return unusualEffects.First(x => x.Value == closest).Key;
+        }
 
         public static string CreateUniqueId(long defindex, string quality, bool craftable, string priceIndex, bool australium)
             => string.Join('_', $"{defindex}", $"{quality}", $"{Convert.ToInt32(craftable)}", $"{priceIndex}", Convert.ToInt32(australium));

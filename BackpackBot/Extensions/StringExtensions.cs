@@ -12,7 +12,7 @@
         {
             SortedDictionary<string, int> comparisonScores = new SortedDictionary<string, int>();
 
-            foreach (string s in toCompare)
+            foreach (string s in toCompare.Distinct())
             {
                 int score = query.Length;
 
@@ -26,11 +26,11 @@
                 }
 
                 score += ComputeLevenshteinDistance(query, s);
+
                 comparisonScores.Add(s, score);
             }
 
             var sorted = comparisonScores.OrderBy(c => c.Value);
-
             return sorted.ToDictionary(x => x.Key, x => x.Value).Keys.Take(numResults).ToList();
         }
 
