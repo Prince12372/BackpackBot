@@ -153,6 +153,9 @@
 
         public static string GetPriceIndex(string effectName)
         {
+            if (effectName.Equals("0"))
+                return effectName;
+
             List<string> priceIndexes = unusualEffects.Values.ToList();
 
             string closest = StringExtensions.GetBestMatchesFor(priceIndexes, effectName, 1).First();
@@ -163,10 +166,10 @@
         public static string CreateUniqueId(long defindex, string quality, bool craftable, string priceIndex, bool australium)
             => string.Join('_', $"{defindex}", $"{quality}", $"{Convert.ToInt32(craftable)}", $"{priceIndex}", Convert.ToInt32(australium));
 
-        public static string GetQualityName(this string qualityId)
+        public static string GetQualityName(string qualityId)
             => qualityNames.ContainsKey(qualityId) ? qualityNames[qualityId] : null;
 
-        public static string GetEffectOrSeries(this string itemName, string priceIndex)
+        public static string GetEffectOrSeries(string itemName, string priceIndex)
         {
             string effectOrSeries = string.Empty;
 
@@ -180,7 +183,7 @@
             return effectOrSeries;
         }
 
-        public static string ToString(this long lastUpdate, string format = "g")
+        public static string FormatLastUpdate(long lastUpdate, string format = "g")
             => $"{new DateTime(1970, 1, 1, 0, 0, 0, 0).AddSeconds(lastUpdate):g}";
     }
 }

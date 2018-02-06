@@ -54,13 +54,13 @@
             var remainder = input.Skip(name.Count).ToList();
 
             // default values
-            string quality = "1", priceIndex = "0";
+            string quality = "6", priceIndex = "0";
             bool craftable = true, australium = false;
 
             long defindex = ItemExtensions.GetDefIndex(string.Join(' ', name), items);
 
             ItemSearchOptions options = new ItemSearchOptions();
-            if (!name.Equals(remainder))
+            if (remainder.Count > 0)
             {
                 var result = Parser.Default.ParseArguments<ItemSearchOptions>(remainder);
                 options = result.MapResult(x => x, x => options);
@@ -74,13 +74,67 @@
 
             if (DbService.TryGetDbPriceItem(uniqueId, out DbPriceItem item))
             {
-                eb.WithTitle($"Price information for {item.Name} {(!quality.Equals("0") ? $"with effect {ItemExtensions.GetEffectOrSeries(item.Name, priceIndex)}" : string.Empty)}")
-                    .WithFooter($"Last updated: {(item.LastUpdate.HasValue ? item.LastUpdate.Value.ToString("g") : default)}")
-                    .AddInlineField("Current Value", $"{item.Value ?? default} {item.Currency ?? string.Empty}")
-                    .AddInlineField("High Value", item.HighValue ?? default)
-                    .AddInlineField("Difference", item.Difference ?? default)
-                    .WithSuccessColor();
+                // create the items's in-game name
+                string itemName = ItemExtensions.GetQualityName(item.Quality) + " " + item.Name + (!priceIndex.Equals("0") ? $" ({ItemExtensions.GetEffectOrSeries(item.Name, item.PriceIndex)})" : string.Empty);
 
+                // create the item's last update time
+                string itemLastUpdate = item.LastUpdate.HasValue ? ItemExtensions.FormatLastUpdate(item.LastUpdate.Value) : "N/A";
+
+                // create the item's displayed value
+                string itemValue = item.Value.ToString() ?? "N/A";
+
+                if (!itemValue.Equals("N/A"))
+                {
+                    if (item.Currency.Equals("metal"))
+                        itemValue += " ref";
+                    else if (item.Currency.Equals("keys"))
+                        itemValue += " keys";
+                    else if (item.Currency.Equals("usd"))
+                        itemValue = "$" + itemValue;
+                }
+
+                eb.WithSuccessColor()
+                   .WithTitle($"Price information for {itemName}")
+                   .WithFooter($"Last site update for this item: {itemLastUpdate}");
+
+                if (item.HighValue.HasValue)
+                {
+                    eb.AddInlineField("Lower Value:", itemValue);
+
+                    string itemHighValue = item.HighValue.ToString();
+                    if (item.Currency.Equals("metal"))
+                        itemHighValue += " ref";
+                    else if (item.Currency.Equals("keys"))
+                        itemHighValue += " keys";
+                    else if (item.Currency.Equals("usd"))
+                        itemHighValue = "$" + itemHighValue;
+
+                    eb.AddInlineField("Upper Value:", itemHighValue);
+                }
+                else
+                {
+                    eb.AddInlineField("Value:", itemValue);
+                }
+
+                if (item.Difference.HasValue)
+                {
+                    eb.AddInlineField("Difference:", item.Difference.Value.ToString("0.00") + " ref");
+                }
+
+                DbSchemaItem schemaItem = DbService.GetSchemaItem((uint)item.DefIndex);
+
+                if (schemaItem != null && !string.IsNullOrWhiteSpace(schemaItem.ImageUrl))
+                {
+                    eb.WithThumbnailUrl(schemaItem.ImageUrl);
+                }
+
+                await Context.Channel.SendMessageAsync(string.Empty, embed: eb.Build()).ConfigureAwait(false);
+            }
+            else
+            {
+                eb.WithErrorColor()
+                    .WithDescription("Couldn't find an item matching your search.")
+                    .WithFooter($"Debug unique ID: {uniqueId}");
                 await Context.Channel.SendMessageAsync(string.Empty, embed: eb.Build()).ConfigureAwait(false);
             }
         }

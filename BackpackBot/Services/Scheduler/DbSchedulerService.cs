@@ -21,6 +21,8 @@
             registry.Schedule<DbPricesUpdater>().WithName("prices").ToRunNow().AndEvery(30).Minutes();
             registry.Schedule<DbCurrenciesUpdater>().WithName("currencies").ToRunNow().AndEvery(1).Hours();
             registry.Schedule<DbSpecialItemsUpdater>().WithName("specials").ToRunNow().AndEvery(24).Hours();
+            registry.Schedule<DbSchemaUpdater>().WithName("schema").ToRunNow().AndEvery(24).Hours();
+
             JobManager.Initialize(registry);
 
             JobManager.JobException += jobException => log.Fatal($"An error just happened with a scheduled job: {jobException.Exception}");

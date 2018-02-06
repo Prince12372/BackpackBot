@@ -13,20 +13,22 @@
         private static BotConfig config = new BotConfig();
         private static Logger log = LogManager.GetCurrentClassLogger();
 
-        public static (int, int, int) SetupDb()
+        public static void SetupDb()
         {
             using (var conn = new SQLiteConnection(config.DbLocation))
             {
                 try
                 {
-                    return (conn.CreateTable<DbPriceItem>(), conn.CreateTable<DbCurrency>(), conn.CreateTable<DbSpecialItem>());
+                    conn.CreateTable<DbPriceItem>();
+                    conn.CreateTable<DbCurrency>();
+                    conn.CreateTable<DbSpecialItem>();
+                    conn.CreateTable<DbSchemaItem>();
                 }
                 catch (Exception ex)
                 {
                     log.Error(ex, ex.Message);
                     log.Error(ex, ex.StackTrace);
                 }
-                return (default, default, default);
             }
         }
 
@@ -45,6 +47,24 @@
                 }
                 return (default, default);
             }
+        }
+
+        public static DbSchemaItem GetSchemaItem(uint defIndex)
+        {
+            DbSchemaItem item = null;
+            using (var conn = new SQLiteConnection(config.DbLocation))
+            {
+                try
+                {
+                    item = conn.Get<DbSchemaItem>(defIndex);
+                }
+                catch (Exception ex)
+                {
+                    log.Warn(ex, ex.Message);
+                    log.Warn(ex, ex.StackTrace);
+                }
+            }
+            return item;
         }
 
         public static Dictionary<long, string> GetUniqueItems()
@@ -70,7 +90,7 @@
                     log.Warn(ex, ex.StackTrace);
                 }
             }
-            return dict;
+            return dict.OrderBy(x => x.Key).ToDictionary(x => x.Key, x => x.Value);
         }
         
         public static bool TryGetDbPriceItem(string uniqueId, out DbPriceItem item)
