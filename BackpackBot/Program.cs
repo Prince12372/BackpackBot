@@ -34,7 +34,7 @@
             Logging.SetupLogger();
             log = LogManager.GetCurrentClassLogger();
             DbService.SetupDb();
-            DbSchedulerService.Initialize();
+            //DbSchedulerService.Initialize();
 
             // connect to and login to Discord
             client = new DiscordSocketClient();

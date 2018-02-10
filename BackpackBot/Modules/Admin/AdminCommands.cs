@@ -1,12 +1,16 @@
 ﻿namespace BackpackBot.Modules.Admin
 {
+    using System;
     using System.Collections.Generic;
+    using System.Diagnostics;
     using System.Linq;
+    using System.Reactive.Linq;
     using System.Threading.Tasks;
     using BackpackBot.Extensions;
     using BackpackBot.Services;
     using Discord;
     using Discord.Commands;
+    using Discord.WebSocket;
     using FluentScheduler;
     using NLog;
 
@@ -14,6 +18,9 @@
     {
         private Logger log = LogManager.GetCurrentClassLogger();
         private BotConfig config = new BotConfig();
+        private static readonly IEmote left_arrow = new Emoji("\U00002b05");
+        private static readonly IEmote right_arrow = new Emoji("\U000027a1");
+
         private List<string> types = new List<string>()
         {
             "prices",
@@ -99,6 +106,5 @@
                 }
             }
         }
-        
     }
 }
